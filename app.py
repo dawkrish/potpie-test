@@ -1,7 +1,7 @@
 import dotenv
 from flask import Flask, request, jsonify
 from embeddings import save_embeddings, get_thread_id, get_embeddings
-from rag import responsd_to_hi
+from rag import respond_to_message
 
 app = Flask(__name__)
 
@@ -60,5 +60,5 @@ def history():
 
 if __name__ == '__main__':
     dotenv.load_dotenv()
-    # responsd_to_hi()
+    respond_to_message()
     app.run(debug=True)

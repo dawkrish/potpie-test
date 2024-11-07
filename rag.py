@@ -1,41 +1,33 @@
 import os
+
+import chromadb.utils.embedding_functions
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
+from langchain_mistralai import ChatMistralAI
+from langchain.agents import initialize_agent, Tool
+from langchain_chroma import Chroma
+
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langgraph.prebuilt import create_react_agent
-from langchain.agents import Tool
+
+from embeddings import get_default_embeddings
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
-
 os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY")
+os.environ["MISTRAL_API_KEY"] = os.getenv("MISTRAL_API_KEY")
+# model = ChatAnthropic(model="claude-3-5-sonnet-20240620")
 
-model = ChatAnthropic(model="claude-3-5-sonnet-20240620")
+model = ChatMistralAI(model="mistral-large-latest")
+
 parser = StrOutputParser()
-system_template = "Translate the following into {language}:"
-prompt_template = ChatPromptTemplate.from_messages(
-    [("system", system_template), ("user", "{text}")]
-)
-
 chain = model | parser
 
-dummy_tool = Tool(
-    name="dummy_tool",
-    func=lambda x: "This is a dummy response to: " + x,
-    description="A simple dummy tool that returns a static response"
-)
-
-agent = create_react_agent(chain, tools=[])
+vectorstore = Chroma(persist_directory="./db",
+                     embedding_function=chromadb.utils.embedding_functions.DefaultEmbeddingFunction())
+retriever = vectorstore.as_retriever()
 
 
-def respond_to_hi():
-    # Invoke the agent with the message "Hi, how are you?"
-    response = agent.invoke(HumanMessage("HIHIHIHI"))
-    # Return the response messages
-    return response["messages"]
-
-# # Example use of the function
-# if __name__ == "__main__":
-#     response = respond_to_hi()
-#     print(response)
+def respond_to_message(user_message, embs):
+    for i in chain.stream():
+        retriever.g
+        print(i)
