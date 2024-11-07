@@ -60,5 +60,5 @@ def history():
 
 if __name__ == '__main__':
     dotenv.load_dotenv()
-    responsd_to_hi()
+    # responsd_to_hi()
     app.run(debug=True)

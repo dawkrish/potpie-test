@@ -62,7 +62,6 @@ def get_file_text(file_name: str):
 def get_default_embeddings(text):
     default_embedder = embedding_functions.DefaultEmbeddingFunction()
     emb = default_embedder([text])
-    print(emb)
     return emb
 
 
@@ -71,7 +70,7 @@ def get_openai_embeddings(text):
         input=text,
         model="text-embedding-3-small",
     )
-    return response
+    return response["data"][0]["embedding"]
 
 
 def get_asset_id():
