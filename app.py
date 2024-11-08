@@ -1,4 +1,5 @@
 import dotenv
+import datetime
 from flask import Flask, request, jsonify, Response
 from embeddings import save_embeddings, get_thread_id, retrieve_embeddings
 from rag import respond_to_message
@@ -6,6 +7,7 @@ from rag import respond_to_message
 app = Flask(__name__)
 
 thread_to_asset_map = {}
+chat_history = {}
 
 
 @app.route('/api/document/process', methods=['POST'])
@@ -52,18 +54,41 @@ def message():
     if asset_id is None:
         return jsonify(error="Invalid chat-thread id, create a new one"), 404
     
+
+    def get_ai_response():
+        ai_response = ""
+        for row in respond_to_message(user_message, asset_id, thread_id):
+            ai_response += row
+        return ai_response
+
+    if thread_id not in chat_history:
+        chat_history[thread_id] = []
+        
+    chat_history[thread_id].append({
+        "timestamp" : datetime.datetime.now(),
+        "user_message" : user_message,
+        "ai_response" : get_ai_response()
+    })
+    print(chat_history)
+        
     def generate():
-        for row in respond_to_message(user_message, asset_id):
+        for row in respond_to_message(user_message, asset_id, thread_id):
             yield row + '\n'
+    
     return Response(generate(), mimetype='application/json')
 
 
-@app.route('/api/chat/history', methods=['GET'])
-def history():
-    request_data = request.get_json()
-    thread_id = request_data.get("thread_id", None)
-    if thread_id is None:
-        return jsonify(error="thread_id is required"), 400
+@app.route('/api/chat/history/<thread_id>', methods=['GET'])
+def history(thread_id):
+    # request_data = request.getddgcc_json()
+    # thread_id = request_data.get("thread_id", None)
+    # if thread_id is None:
+    #     return jsonify(error="thread_id is required"), 400
+    
+    if thread_to_asset_map.get(thread_id, None) is None:
+        return jsonify(error="thread_id does not exists in memory"), 400
+   
+    return jsonify(chat_history=chat_history.get(thread_id, [])), 200
 
 
 if __name__ == '__main__':
