@@ -1,24 +1,80 @@
-## Potpie Assignment
+# Potpie Assignment
 
-### Setup Instructions
+## Table Of Contents
+* [Setup Instructions](#setup-instructions)
+* [Technologies Used](#technologies-used)
+* [Workflow](#workflow)
+* [API Documentation](#api-documentation)
+* [Possible Improvements](#possible-improvements)
 
-* ```
+## Setup Instructions
+
+```
 git clone git@github.com:dawkrish/potpie-test.git
 ```
-* `cd potpie-test`
-* ```
+
+```
+cd potpie-test
+```
+
+```
 python3 -m venv venv
 ```
-* `pip install -r requirements.txt`
 
-### API Documentation
-Generate from Mistral-AI
+```
+pip install -r requirements.txt
+```
 
-# API Documentation
+
+## Technologies used
+
+* Python (>=3.10) because we use pattern-matching
+* Flask for REST API
+* ChromaDB as vector DB to store the embeddings (we have done persistently)
+* PyPDF2 to get text from pdf files
+* python-docx to get text from docx files
+* dotenv to load environment variables 
+* HuggingFace Embeddings (to embed text and later used to make vectorstore)
+* Langchain ties up everything
+* llm used is ChatMistralAI, currently I have used all the tokens :"
+
+
+## Workflow
+* User uploads the file.
+
+* User creats an **asset_id** with the end point `POST /api/document/process`
+    * text is extracted out for different extension types using `get_file_text` (embeddings.py)
+    * `save_embeddings` (embeddings.py) is called to save the embedding.
+        * creates a **uuid** and assigns to `asset_id`
+        * `get_huggingface_embeddings` (embeddings.py) is used for embeddings (we have a default-embedder too `get_default_embeddings`)
+        * `chroma_collection.add` to **save** the embedding
+        * returns `asset_id`
+    * the end point returns `asset_id`
+
+* User creates a "thread_id" with the end point `POST /api/chat/start`
+    * This end point takes the `asset_id` from the previous end point
+    * It returns a `thread_id` .
+    * The thread `thread_to_asset_map` exists to keep mappings, its a in-memory global variable
+    * Now after getting the *thread_id* user can start chatting.
+
+* End point `POST /api/chat/message` is used for to chat.
+    * `user_message` the user prompt/query and `thread_id` which we got from last end point is needed
+    * we get response from `response_to_message` (rag.py)
+    * we use mistral-ai for now, it can be changed
+    * The response will be in stream;  Streaming can be turned off.
+    * at this end point, the "chat-message" gets stored in the variable `chat_history`, another in-memory global variable
+    * The chats are non-persistent. We can integrate sqlite3 to save the chats.
+
+* End point `GET /api/chat/history/<thread_id>` returns the specific chat.
+
+
+
+## API Documentation
+**Generate from Mistral-AI** 
 
 This API provides endpoints for processing documents and managing chat sessions. Below are the available endpoints and their usage.
 
-## Endpoints
+### Endpoints
 
 ### 1. Process Document
 
@@ -153,57 +209,6 @@ This API provides endpoints for processing documents and managing chat sessions.
       "error": "thread_id does not exist in memory"
   }
   ```
-
-## Running the Application
-
-To run the application, ensure you have the necessary environment variables set up and execute the following command:
-
-```bash
-python app.py
-```
-
-This will start the application in debug mode.
-
-### Techonolgies used
-
-* Python (>=3.10) because we use pattern-matching
-* Flask for REST API
-* ChromaDB as vector DB to store the embeddings (we have done persistently)
-* PyPDF2 to get text from pdf files
-* python-docx to get text from docx files
-* dotenv to load environment variables 
-* HuggingFace Embeddings (to embed text and later used to make vectorstore)
-* Langchain ties up everything
-* llm used is ChatMistralAI, currently I have used all the tokens :"
-
-
-### Workflow
-* User uploads the file.
-
-* User creats an **asset_id** with the end point `POST /api/document/process`
-    * text is extracted out for different extension types using `get_file_text` (embeddings.py)
-    * `save_embeddings` (embeddings.py) is called to save the embedding.
-        * creates a **uuid** and assigns to `asset_id`
-        * `get_huggingface_embeddings` (embeddings.py) is used for embeddings (we have a default-embedder too `get_default_embeddings`)
-        * `chroma_collection.add` to **save** the embedding
-        * returns `asset_id`
-    * the end point returns `asset_id`
-
-* User creates a "thread_id" with the end point `POST /api/chat/start`
-    * This end point takes the `asset_id` from the previous end point
-    * It returns a `thread_id` .
-    * The thread `thread_to_asset_map` exists to keep mappings, its a in-memory global variable
-    * Now after getting the *thread_id* user can start chatting.
-
-* End point `POST /api/chat/message` is used for to chat.
-    * `user_message` the user prompt/query and `thread_id` which we got from last end point is needed
-    * we get response from `response_to_message` (rag.py)
-    * we use mistral-ai for now, it can be changed
-    * The response will be in stream;  Streaming can be turned off.
-    * at this end point, the "chat-message" gets stored in the variable `chat_history`, another in-memory global variable
-    * The chats are non-persistent. We can integrate sqlite3 to save the chats.
-
-* End point `GET /api/chat/history/<thread_id>` returns the specific chat.
 
 ### Possible Improvements
 * Better handling of chat-history, possibly using `lang-graph`
