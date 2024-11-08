@@ -1,5 +1,5 @@
 import dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from embeddings import save_embeddings, get_thread_id, retrieve_embeddings
 from rag import respond_to_message
 
@@ -51,9 +51,11 @@ def message():
     asset_id = thread_to_asset_map.get(thread_id, None)
     if asset_id is None:
         return jsonify(error="Invalid chat-thread id, create a new one"), 404
-    result = respond_to_message(user_message, asset_id)
-    print(result)
-    return jsonify(msg=result)
+    
+    def generate():
+        for row in respond_to_message(user_message, asset_id):
+            yield row + '\n'
+    return Response(generate(), mimetype='application/json')
 
 
 @app.route('/api/chat/history', methods=['GET'])
@@ -66,5 +68,4 @@ def history():
 
 if __name__ == '__main__':
     dotenv.load_dotenv()
-    # print(respond_to_message("Hi, explain this doc", "70c81f8e-b2a2-4e54-9a34-c71c6d206d72"))
     app.run(debug=True)
