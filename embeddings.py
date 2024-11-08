@@ -15,8 +15,6 @@ COLLECTION_NAME = "my_embeddings"
 
 chroma_client = chromadb.PersistentClient(path=DATABASE_PATH)
 chroma_collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
-openai_client = openai.OpenAI()
-
 
 def extract_from_txt(file_name: str) -> str:
     with open(file_name, "r") as f:
@@ -64,14 +62,13 @@ def get_default_embeddings(text):
     emb = default_embedder([text])
     return emb
 
-
-def get_openai_embeddings(text):
-    response = openai_client.embeddings.create(
-        input=text,
-        model="text-embedding-3-small",
+def get_huggingface_embeddings(text):
+    huggingface_ef = embedding_functions.HuggingFaceEmbeddingFunction(
+        api_key=os.getenv("HUGGINGFACE_API_KEY"),
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
-    return response["data"][0]["embedding"]
-
+    emb = huggingface_ef([text])
+    return emb
 
 def get_asset_id():
     return str(uuid.uuid4())
@@ -86,15 +83,16 @@ def save_embeddings(file_path):
     file_data = get_file_text(file_path)
     chroma_collection.add(
         documents=[file_data],
-        embeddings=get_default_embeddings(file_data)[0],
-        metadatas=[{"file_path": file_path}],
+        embeddings=get_huggingface_embeddings(file_data)[0],
+        metadatas=[{"file_path": file_path, "asset_id" : id}],
         ids=[id],
     )
     return id
 
 
-def get_embeddings(asset_id):
-    results = chroma_collection.get(include=['embeddings', 'documents', 'metadatas'], ids=[asset_id])
+def retrieve_embeddings(asset_id):
+    results = chroma_collection.get(
+        include=['embeddings', 'documents', 'metadatas'], ids=[asset_id])
     if len(results['ids']) == 0:
         return None
     else:
