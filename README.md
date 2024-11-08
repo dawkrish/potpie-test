@@ -5,6 +5,10 @@
 * [Technologies Used](#technologies-used)
 * [Workflow](#workflow)
 * [API Documentation](#api-documentation)
+    - [Process Document](#1-process-document)
+    - [Start Chat](#2-start-chat)
+    - [Send Message](#3-send-message)
+    - [Chat History](#4-get-chat-history)
 * [Possible Improvements](#possible-improvements)
 
 ## Setup Instructions
