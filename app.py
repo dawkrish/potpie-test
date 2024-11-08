@@ -80,11 +80,6 @@ def message():
 
 @app.route('/api/chat/history/<thread_id>', methods=['GET'])
 def history(thread_id):
-    # request_data = request.getddgcc_json()
-    # thread_id = request_data.get("thread_id", None)
-    # if thread_id is None:
-    #     return jsonify(error="thread_id is required"), 400
-    
     if thread_to_asset_map.get(thread_id, None) is None:
         return jsonify(error="thread_id does not exists in memory"), 400
    

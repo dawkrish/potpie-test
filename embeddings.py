@@ -5,7 +5,6 @@ import PyPDF2
 import docx
 import chromadb
 from chromadb.utils import embedding_functions
-import openai
 
 import dotenv
 dotenv.load_dotenv()
@@ -84,7 +83,7 @@ def save_embeddings(file_path):
     chroma_collection.add(
         documents=[file_data],
         embeddings=get_huggingface_embeddings(file_data)[0],
-        metadatas=[{"file_path": file_path, "asset_id" : id}],
+        metadatas=[{"file_path": file_path, "" : id}],
         ids=[id],
     )
     return id
